@@ -1,0 +1,10 @@
+{
+  "name": "sabis-api",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "nightmare": "2.7.0",
+    "md5": "2.2.1",
+    "express": "4.14.0"
+  }
+}
