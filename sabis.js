@@ -21,7 +21,7 @@ export default class Sabis {
 
   login(username, password) {
     return new Promise((resolve, reject) => {
-      Nightmare({waitTimeout: 10000}).cookies.clearAll()
+      Nightmare({waitTimeout: 20000}).cookies.clearAll()
         .goto(Sabis.url)
         .type(`${Sabis.loginForm} [name=UserName]`, username)
         .type(`${Sabis.loginForm} [name=Password]`, password)
