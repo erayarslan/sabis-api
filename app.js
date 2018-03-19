@@ -1,60 +1,51 @@
-var cache = require(__dirname + '/cache');
-var sabis = require(__dirname + '/sabis');
+import express from 'express';
+import bodyParser from 'body-parser';
 
-var express = require('express');
-var bodyParser = require('body-parser');
+import Sabis from './sabis';
+import Cache from './cache';
 
-var app = express();
+const app = express();
+const sabis = new Sabis();
+
+const port = process.env.PORT || 7331;
 
 app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
-var getUser = function (username, password, next) {
-  if (cache.exist(username, password)) {
-    next(null, cache.get(username, password))
-  } else {
-    sabis.doLogin(username, password, function (e, user) {
-      if (!e) {
-        cache.set(username, password, user);
-        next(null, cache.get(username, password));
-      } else {
-        next(e, null);
-      }
-    });
-  }
+const fetchUserOrGetFromCache = function (username, password) {
+  return new Promise((resolve, reject) => {
+    if (Cache.exist(username, password)) {
+      resolve(Cache.get(username, password));
+    } else {
+      sabis.login(username, password)
+        .then(user => {
+          Cache.set(username, password, user);
+          resolve(Cache.get(username, password));
+        })
+        .catch(reject);
+    }
+  });
 };
 
-app.post('/', function (req, res) {
-  var username = req.body.username || "";
-  var password = req.body.password || "";
+app.post('/', (req, res) => {
+  const username = req.body.username || '';
+  const password = req.body.password || '';
 
-  if (username.trim() === "" || password.trim() === "") {
-    res.json({
-      err: true,
-      msg: "username or password cannot be empty"
-    });
-
-    return;
+  if (username.trim() === '' || password.trim() === '') {
+    res.json({err: true, msg: 'username or password cannot be empty'});
+  } else {
+    fetchUserOrGetFromCache(username, password)
+      .then(user => {
+        res.json({err: false, data: user});
+      })
+      .catch(e => {
+        res.json({err: true, msg: e.message});
+      });
   }
-
-  getUser(username, password, function (e, user) {
-    res.json(e ? {
-      err: true,
-      msg: e.message
-    } : {
-      err: false,
-      data: user
-    });
-  });
 });
 
-app.use(function (req, res) {
-  res.status(404).json({
-    err: true,
-    msg: "wrong end-point"
-  });
+app.use((req, res) => {
+  res.status(404).json({err: true, msg: 'wrong end-point'});
 });
 
-app.listen(7331, function () {
-  console.log("[APP] up");
-});
+app.listen(port, console.log.bind(null, `[APP] ${port}`));

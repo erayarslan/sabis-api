@@ -2,8 +2,7 @@
 
 ```sh
 $ npm install
-$ node app
+$ npm start
 # http://localhost:7331 (API)
 # POST "/" {username: "example", "password": "secret"}
-# done.
 ```
